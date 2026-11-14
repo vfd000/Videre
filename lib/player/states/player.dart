@@ -913,15 +913,19 @@ class PlayerCubit extends Cubit<PlayerState> with WidgetsBindingObserver {
           processingState != AudioProcessingState.completed;
       var playbackState = PlaybackState(
         controls: [
-          state.hasQueue ? MediaControl.skipToPrevious : MediaControl.rewind,
+          // Always previous/next: with no queue, next plays a recommended
+          // video (see _playNextNow) instead of seeking a few seconds.
+          MediaControl.skipToPrevious,
           if (playing) MediaControl.pause else MediaControl.play,
           MediaControl.stop,
-          state.hasQueue ? MediaControl.skipToNext : MediaControl.fastForward,
+          MediaControl.skipToNext,
         ],
         systemActions: const {
           MediaAction.seek,
           MediaAction.seekForward,
           MediaAction.seekBackward,
+          MediaAction.skipToNext,
+          MediaAction.skipToPrevious,
           MediaAction.setShuffleMode,
           MediaAction.setRepeatMode
         },
@@ -1455,6 +1459,21 @@ class PlayerCubit extends Cubit<PlayerState> with WidgetsBindingObserver {
   }
 
   Future<void> _playNextNow() async {
+    // A single video (no playlist, nothing queued): headphone double-tap and
+    // the lock screen's next go on to its recommended videos, skipping live
+    // and upcoming ones.
+    if (settings.state.playerRepeatMode == PlayerRepeat.noRepeat &&
+        state.playQueue.isEmpty &&
+        _playlistReference == null &&
+        state.offlineVideos.isEmpty) {
+      final recommended = (state.currentlyPlaying?.recommendedVideos ?? [])
+          .where((v) =>
+              v.liveNow != true &&
+              v.isUpcoming != true &&
+              (v.lengthSeconds ?? 0) > 0)
+          .toList();
+      if (recommended.isNotEmpty) queueVideos(recommended);
+    }
     if (settings.state.playerRepeatMode != PlayerRepeat.repeatOne &&
         state.playQueue.isEmpty &&
         !playlistComplete) {
