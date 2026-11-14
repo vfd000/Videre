@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:clipious/l10n/generated/app_localizations.dart';
 import 'package:clipious/app/states/app.dart';
+import 'package:clipious/network/client_certificate.dart';
 import 'package:clipious/router.dart';
 import 'package:clipious/utils/views/components/app_icon.dart';
 import 'package:settings_ui/settings_ui.dart';
@@ -11,6 +12,7 @@ import 'package:settings_ui/settings_ui.dart';
 import '../../../feedback/views/open_feedback.dart';
 import '../../../downloads/views/components/download_folder.dart';
 import '../../states/settings.dart';
+import 'client_certificate.dart';
 import 'network_proxy.dart';
 
 settingsTheme(ColorScheme colorScheme) => SettingsThemeData(
@@ -117,6 +119,16 @@ class SettingsScreen extends StatelessWidget {
                             builder: (_) =>
                                 const NetworkProxySettingsScreen())),
                   ),
+                  if (ClientCertificates.instance.supported)
+                    SettingsTile.navigation(
+                      leading: const Icon(Icons.badge_outlined),
+                      title: Text(locals.clientCertificate),
+                      description: Text(locals.clientCertificateSummary),
+                      onPressed: (context) => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  const ClientCertificateSettingsScreen())),
+                    ),
                   SettingsTile.navigation(
                     leading: const Icon(Icons.video_settings),
                     title: Text(locals.videoPlayer),

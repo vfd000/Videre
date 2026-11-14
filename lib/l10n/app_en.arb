@@ -1734,5 +1734,53 @@
   "playlistLoading": "Loading playlist…",
   "playlistLoadFailed": "Could not load the rest of this playlist. Loaded videos are still available.",
   "playlistViewDetails": "View details",
-  "playlistPlayAudio": "Play audio from beginning"
+  "playlistPlayAudio": "Play audio from beginning",
+  "clientCertificate": "Client certificate (mTLS)",
+  "clientCertificateSummary": "Present a certificate to servers that require one",
+  "clientCertificateDescription": "Some servers only accept devices that present a client certificate, for example when you are away from home. Import a PKCS#12 (.p12) file to use it for the API, images, playback, downloads and gateway sign-in on the hosts you choose.",
+  "clientCertificateNone": "No client certificate is installed.",
+  "clientCertificateImport": "Import .p12 file",
+  "clientCertificateReplace": "Replace certificate",
+  "clientCertificatePasswordTitle": "Unlock certificate",
+  "clientCertificatePassword": "Certificate password",
+  "clientCertificateSubject": "Certificate: {name}",
+  "@clientCertificateSubject": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "clientCertificateIssuer": "Issued by {issuer}",
+  "@clientCertificateIssuer": {
+    "placeholders": {
+      "issuer": { "type": "String" }
+    }
+  },
+  "clientCertificateExpires": "Valid until {date}",
+  "@clientCertificateExpires": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "clientCertificateExpired": "Expired on {date}",
+  "@clientCertificateExpired": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "clientCertificateHosts": "Present to hosts",
+  "clientCertificateHostsHelp": "One host per line, or *.example.com for its subdomains. The certificate is never offered to other servers.",
+  "clientCertificateInvalidHosts": "Enter host names such as watch.example.com, without paths or ports.",
+  "clientCertificateNoHosts": "Choose at least one host.",
+  "clientCertificatePending": "Not saved yet. Check the hosts, then save.",
+  "clientCertificateRemove": "Remove certificate",
+  "clientCertificateRemoveConfirm": "Remove the client certificate from this device? Servers that require it will refuse connections.",
+  "clientCertificateSaved": "Client certificate saved.",
+  "clientCertificateRemoved": "Client certificate removed.",
+  "clientCertificateWrongPassword": "The password is incorrect.",
+  "clientCertificateUnsupported": "Android cannot read this file’s encryption. Export it again with legacy encryption (SHA1 MAC, PBE-SHA1-3DES).",
+  "clientCertificateInvalidFile": "This is not a PKCS#12 (.p12) file with a private key and certificate.",
+  "clientCertificateTransportUnsupported": "Android can read this certificate, but the app’s network library cannot. Export it again with legacy encryption (SHA1 MAC, PBE-SHA1-3DES).",
+  "clientCertificateUnreadable": "The saved certificate can no longer be read on this device. Import it again.",
+  "clientCertificateFailed": "Could not save the client certificate.",
+  "clientCertificateUnavailable": "Client certificates are available on Android only."
 }

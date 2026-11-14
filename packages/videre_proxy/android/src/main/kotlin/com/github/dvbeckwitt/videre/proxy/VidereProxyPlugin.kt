@@ -35,13 +35,14 @@ object ProxyDataSource {
         preferences = store
         GatewaySessions.initialize(context)
         NerdVpnAccess.initialize(context)
+        ClientCertificates.initialize(context)
         try {
             val saved = store.getString("configuration", null)
             val loaded = if (saved == null) ProxyPolicy() else {
                 val json = JSONObject(saved)
                 ProxyPolicy.fromMap(json.keys().asSequence().associateWith { json.get(it) })
             }
-            calls.configure(loaded)
+            calls.configure(loaded, ClientCertificates.tls())
             policy = loaded
         } catch (_: Exception) {
             // Corrupt saved settings must never turn an enabled proxy into DIRECT.
@@ -58,8 +59,15 @@ object ProxyDataSource {
         check(store.edit().putString("configuration", JSONObject(next.toMap()).toString()).commit()) {
             "Could not save SOCKS5 proxy settings."
         }
-        calls.configure(next)
+        calls.configure(next, ClientCertificates.tls())
         policy = next
+    }
+
+    /** Rebuilds the transport after the client certificate or its hosts change. */
+    @Synchronized
+    internal fun reloadClientCertificate() {
+        val current = policy ?: return
+        calls.configure(current, ClientCertificates.tls())
     }
 
     @Synchronized
@@ -218,11 +226,44 @@ class VidereProxyPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     result.success(null)
                 }
                 "getConfiguration" -> result.success(ProxyDataSource.configuration())
+                "clientCertificateStatus", "clientCertificateMaterial", "inspectClientCertificate",
+                "importClientCertificate", "setClientCertificateHosts", "removeClientCertificate" ->
+                    clientCertificate(call, result)
                 "request" -> request(call.arguments, result)
                 else -> result.notImplemented()
             }
         } catch (error: Exception) {
             result.error("PROXY_CONFIGURATION", error.message, null)
+        }
+    }
+
+    private fun clientCertificate(call: MethodCall, result: MethodChannel.Result) {
+        try {
+            val value: Any? = when (call.method) {
+                "clientCertificateStatus" -> ClientCertificates.status()
+                "clientCertificateMaterial" -> ClientCertificates.dartMaterial()
+                "inspectClientCertificate" -> ClientCertificates.inspect(
+                    call.argument<ByteArray>("pkcs12") ?: throw ClientCertificateException("invalidFile"),
+                    call.argument<String>("password") ?: "")
+                "importClientCertificate" -> ClientCertificates.save(
+                    call.argument<ByteArray>("pkcs12") ?: throw ClientCertificateException("invalidFile"),
+                    call.argument<String>("password") ?: "",
+                    call.argument<List<String>>("hosts") ?: emptyList()).also { ProxyDataSource.reloadClientCertificate() }
+                "setClientCertificateHosts" -> ClientCertificates.setHosts(
+                    call.argument<List<String>>("hosts") ?: emptyList()).also { ProxyDataSource.reloadClientCertificate() }
+                "removeClientCertificate" -> {
+                    ClientCertificates.remove()
+                    ProxyDataSource.reloadClientCertificate()
+                    null
+                }
+                else -> { result.notImplemented(); return }
+            }
+            result.success(value)
+        } catch (error: ClientCertificateException) {
+            result.error("CLIENT_CERTIFICATE", error.reason, null)
+        } catch (_: Exception) {
+            // Never include exception text: it could echo key material.
+            result.error("CLIENT_CERTIFICATE", "unavailable", null)
         }
     }
 

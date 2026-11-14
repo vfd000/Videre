@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:clipious/globals.dart';
 import 'package:clipious/settings/models/db/settings.dart';
+import 'network/client_certificate.dart';
+import 'network/client_certificate_http_client.dart';
 import 'network/gateway_http_client.dart';
 import 'network/nerdvpn_origin.dart';
 import 'network/network_proxy.dart';
@@ -14,8 +16,8 @@ class MyHttpOverrides extends HttpOverrides {
 
   @override
   HttpClient createHttpClient(SecurityContext? context) {
-    return ReloadableHttpClient(() {
-      final client = super.createHttpClient(context)
+    HttpClient build(SecurityContext? securityContext) {
+      final client = super.createHttpClient(securityContext)
         ..userAgent = _buildUserAgent.isNotEmpty
             ? _buildUserAgent
             : 'Videre/${packageInfo?.version ?? '0.0.0'} (${packageInfo?.packageName ?? ''})'
@@ -31,8 +33,21 @@ class MyHttpOverrides extends HttpOverrides {
           return db.getSettings(skipSslVerificationSettingName)?.value ==
               'true';
         };
-      NetworkProxy.instance.configureClient(client, context: context);
-      return GatewayHttpClient(client);
+      NetworkProxy.instance.configureClient(client, context: securityContext);
+      return client;
+    }
+
+    return ReloadableHttpClient(() {
+      // A caller's own SecurityContext is kept as is. Otherwise the mTLS
+      // client certificate is presented only to the hosts selected for it.
+      final certificate =
+          context == null ? ClientCertificates.instance.current : null;
+      return GatewayHttpClient(certificate == null
+          ? build(context)
+          : ClientCertificateRoutingHttpClient(
+              plain: () => build(null),
+              withCertificate: () => build(certificate.context),
+              presentsTo: certificate.presentsTo));
     });
   }
 }
