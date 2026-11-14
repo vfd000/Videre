@@ -3,6 +3,7 @@ import 'package:clipious/app/views/components/session_focus_guard.dart';
 import 'package:clipious/utils/motion_binding.dart';
 import 'dart:async';
 import 'dart:io';
+import 'network/client_certificate.dart';
 import 'network/network_proxy.dart';
 
 import 'package:dynamic_color/dynamic_color.dart';
@@ -70,6 +71,7 @@ Future<void> main() async {
   db = await SembastSqfDb.create();
   await fileDb.syncWithDb();
   await NetworkProxy.instance.initialize();
+  await ClientCertificates.instance.initialize();
 
   late final bool hasServer;
   try {

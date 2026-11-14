@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.view.ViewGroup
+import android.webkit.ClientCertRequest
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
@@ -22,6 +23,7 @@ import androidx.webkit.ProfileStore
 import androidx.webkit.WebViewCompat
 import com.github.dvbeckwitt.videre.proxy.GatewayContext
 import com.github.dvbeckwitt.videre.proxy.BrowserPrivacySettings
+import com.github.dvbeckwitt.videre.proxy.ClientCertificates
 import com.github.dvbeckwitt.videre.proxy.GatewaySessions
 import com.github.dvbeckwitt.videre.proxy.NerdVpnPkce
 import com.github.dvbeckwitt.videre.proxy.ProxyDataSource
@@ -193,6 +195,14 @@ class GatewayAuthBrowser(private val activity: Activity) {
                 @Deprecated("Required for older WebView implementations")
                 override fun shouldOverrideUrlLoading(view: WebView, target: String): Boolean =
                     navigate(request, view, Uri.parse(target))
+                override fun onReceivedClientCertRequest(view: WebView, certificateRequest: ClientCertRequest) {
+                    // Present the imported mTLS certificate only to hosts the
+                    // user selected for it; other servers get none, as before.
+                    val identity = if (current === request && !request.finishing)
+                        ClientCertificates.identityFor(certificateRequest.host) else null
+                    if (identity == null) certificateRequest.cancel()
+                    else certificateRequest.proceed(identity.privateKey, identity.chain)
+                }
                 override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
                     if (browser === view && current === request) finish(error = "GATEWAY_BROWSER_UNAVAILABLE")
                     return true
