@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:bloc/bloc.dart';
@@ -10,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import '../../globals.dart';
 import '../../network/nerdvpn_access.dart';
 import '../../network/network_proxy.dart';
+import '../../network/watch_auth.dart';
 import '../../utils/invidious_image.dart';
 import '../models/db/server.dart';
 import '../models/errors/invidious_service_error.dart';
@@ -56,6 +58,7 @@ class AddServerCubit extends Cubit<AddServerState> {
               publicInstance: normalizedUrl == state.publicInstance
                   ? state.publicInstance
                   : null));
+          _probeSso();
         }
       },
     );
@@ -63,6 +66,8 @@ class AddServerCubit extends Cubit<AddServerState> {
 
   @override
   Future<void> close() {
+    _ssoProbe?.cancel();
+    ssoDiscovery.dispose();
     urlController.dispose();
     headerNameController.dispose();
     headerValueController.dispose();
@@ -71,8 +76,67 @@ class AddServerCubit extends Cubit<AddServerState> {
     return super.close();
   }
 
+  /// Single sign-on offered by the entered server, probed as the user types.
+  final ssoDiscovery = ValueNotifier<WatchAuthDiscovery?>(null);
+  Timer? _ssoProbe;
+  String? _ssoProbeUrl;
+  Server? _ssoAccount;
+
+  void _probeSso() {
+    final url = normalizeUrl(urlController.text);
+    if (url == _ssoProbeUrl) return;
+    _ssoProbeUrl = url;
+    _ssoProbe?.cancel();
+    ssoDiscovery.value = null;
+    // NerdVPN has its own sign-in and never offers this single sign-on.
+    if (url == null ||
+        Uri.parse(url).scheme != 'https' ||
+        NerdVpnAccess.supportsUrl(url)) {
+      return;
+    }
+    _ssoProbe = Timer(const Duration(milliseconds: 700), () async {
+      // A directory choice is a public instance; do not contact it early.
+      if (isClosed || state.publicInstance == url) return;
+      final discovery = await WatchAuth.instance.discover(url);
+      if (!isClosed && _ssoProbeUrl == url) ssoDiscovery.value = discovery;
+    });
+  }
+
+  /// Adds the account. Servers publishing /.well-known/watch-auth first get a
+  /// single sign-on in a Custom Tab; the tokens are dropped if adding fails.
   Future<Server?> validateServer() async {
     if (isClosed || state.loading) return null;
+    _ssoAccount = null;
+    Server? result;
+    try {
+      result = await _validateServer();
+    } finally {
+      final account = _ssoAccount;
+      _ssoAccount = null;
+      if (account != null && result == null) {
+        await WatchAuth.instance.signOut(account);
+      }
+    }
+    return result;
+  }
+
+  Future<Server?> _signInWithSso(Server server) async {
+    if (WatchAuth.accountKey(server) == null ||
+        NerdVpnAccess.supports(server) ||
+        state.publicInstance == server.url) {
+      return server;
+    }
+    final discovery = await WatchAuth.instance
+        .discover(server.url, headers: server.customHeaders);
+    if (discovery == null) return server;
+    if (isClosed) return null;
+    _ssoAccount = server;
+    final session =
+        await WatchAuth.instance.signIn(server, discovery: discovery);
+    return session == null || isClosed ? null : server;
+  }
+
+  Future<Server?> _validateServer() async {
     final serverUrl = normalizeUrl(urlController.text);
     final headers = Map<String, String>.from(state.headers);
     final onionManualSetup = usesNerdVpnOnion;
@@ -194,6 +258,14 @@ class AddServerCubit extends Cubit<AddServerState> {
           if (onionManualSetup) throw NerdVpnAccessRequired(access.state);
           return server;
         }
+      }
+
+      if (await _signInWithSso(server) == null) {
+        if (protectedSession != null) {
+          await service.logOutProtected(protectedSession);
+          protectedSession = null;
+        }
+        return null;
       }
 
       await service

@@ -40,7 +40,7 @@ class NerdVpnPkce private constructor(val verifier: String, val callbackUrl: Str
                 server.query != null || server.fragment != null) return null
             require(Regex("^[a-zA-Z0-9-]+$").matches(nonce))
             val bytes = ByteArray(32).also(random::nextBytes)
-            return NerdVpnPkce(bytes.toByteString().base64Url().trimEnd('='), "videre-gateway://callback/$nonce")
+            return NerdVpnPkce(bytes.toByteString().base64Url().trimEnd('='), "videre-liess-gateway://callback/$nonce")
         }
 
         internal fun challengeFor(verifier: String): String =

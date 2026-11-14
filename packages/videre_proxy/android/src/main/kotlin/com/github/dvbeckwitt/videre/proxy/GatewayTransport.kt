@@ -40,6 +40,8 @@ internal class GatewayTransportInterceptor : Interceptor {
                 if (cookie == null) removeHeader("Cookie") else header("Cookie", cookie)
             }
             access.apiKey?.let { header(NERDVPN_KEY_HEADER, it) }
+            // The newest single sign-on ID token, even for older media sources.
+            WatchAuthHeaders.apply(context, request.url, this)
             if (isNerdVpnOrigin(context.origin)) tag(NerdVpnRequestRevision::class.java,
                 NerdVpnRequestRevision(access.revision, access.apiKey ?: explicitKey, access.intent))
         }.build()

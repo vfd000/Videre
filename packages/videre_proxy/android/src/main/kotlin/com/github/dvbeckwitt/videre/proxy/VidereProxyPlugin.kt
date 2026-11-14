@@ -35,6 +35,7 @@ object ProxyDataSource {
         preferences = store
         GatewaySessions.initialize(context)
         NerdVpnAccess.initialize(context)
+        WatchAuthStore.initialize(context)
         try {
             val saved = store.getString("configuration", null)
             val loaded = if (saved == null) ProxyPolicy() else {
@@ -107,6 +108,7 @@ class VidereProxyPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
     private var channel: MethodChannel? = null
     private var gatewayChannel: MethodChannel? = null
     private var accessChannel: MethodChannel? = null
+    private var watchAuthChannel: MethodChannel? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private val pendingLock = Any()
     private val pending = mutableSetOf<Call>()
@@ -115,6 +117,7 @@ class VidereProxyPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         ProxyDataSource.initialize(binding.applicationContext)
+        watchAuthChannel = WatchAuthStore.attach(binding)
         synchronized(pendingLock) {
             attached = true
             engineEpoch++
@@ -204,6 +207,8 @@ class VidereProxyPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
         channel?.setMethodCallHandler(null)
         gatewayChannel?.setMethodCallHandler(null)
         accessChannel?.setMethodCallHandler(null)
+        watchAuthChannel?.setMethodCallHandler(null)
+        watchAuthChannel = null
         accessChannel = null
         gatewayChannel = null
         channel = null

@@ -27,6 +27,7 @@ import 'package:clipious/utils/views/components/conditional_wrap.dart';
 import 'package:clipious/utils/views/components/external_link.dart';
 
 import '../../../network/nerdvpn_access.dart';
+import '../../../network/watch_auth.dart';
 import '../../services/gateway_auth.dart';
 
 @RoutePage()
@@ -449,17 +450,33 @@ class AddServerScreen extends StatelessWidget {
                                       child: CircularProgressIndicator(
                                     strokeWidth: 1,
                                   )))
-                              : ValueListenableBuilder(
-                                  valueListenable: cubit.urlController,
-                                  builder: (context, _, __) => Text(cubit
+                              : ListenableBuilder(
+                                  listenable: Listenable.merge([
+                                    cubit.urlController,
+                                    cubit.ssoDiscovery
+                                  ]),
+                                  builder: (context, _) => Text(cubit
                                               .usesNerdVpn &&
                                           !cubit.usesNerdVpnOnion &&
                                           (state.protectedServer ||
                                               !state.headers.keys.any(
                                                   NerdVpnAccess.isKeyHeader))
                                       ? locals.nerdVpnSignInAndAdd
-                                      : locals.testAndAddServer),
+                                      : cubit.ssoDiscovery.value != null
+                                          ? locals.ssoSignInAndAdd
+                                          : locals.testAndAddServer),
                                 )),
+                      ValueListenableBuilder<WatchAuthDiscovery?>(
+                        valueListenable: cubit.ssoDiscovery,
+                        builder: (context, sso, _) => sso == null
+                            ? const SizedBox.shrink()
+                            : ListTile(
+                                leading:
+                                    const Icon(Icons.verified_user_outlined),
+                                title: Text(locals.ssoAvailable),
+                                subtitle: Text(locals.ssoAddServerHelp),
+                              ),
+                      ),
                       ValueListenableBuilder(
                         valueListenable: cubit.urlController,
                         builder: (context, _, __) => cubit.usesNerdVpnOnion

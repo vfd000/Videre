@@ -1734,5 +1734,30 @@
   "playlistLoading": "Loading playlist…",
   "playlistLoadFailed": "Could not load the rest of this playlist. Loaded videos are still available.",
   "playlistViewDetails": "View details",
-  "playlistPlayAudio": "Play audio from beginning"
+  "playlistPlayAudio": "Play audio from beginning",
+  "ssoTitle": "Single sign-on (SSO)",
+  "ssoSignIn": "Sign in with SSO",
+  "ssoSignInAgain": "Sign in with SSO again",
+  "ssoSignOut": "Sign out of SSO",
+  "ssoNotSignedIn": "This server uses single sign-on. Sign in to use it.",
+  "ssoSignInNeeded": "SSO sign-in needed. Your session expired or was revoked.",
+  "ssoSignedInAs": "Signed in as {email}",
+  "@ssoSignedInAs": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "ssoExpires": "Session token renews automatically (current one expires {time})",
+  "@ssoExpires": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "ssoFailed": "SSO sign-in failed. Try again.",
+  "ssoAvailable": "This server uses single sign-on",
+  "ssoAddServerHelp": "Your browser opens to sign in with SSO before the server is tested and added.",
+  "ssoSignInAndAdd": "Sign in with SSO and add",
+  "ssoTokenLoginTitle": "Also sign in to your Invidious account?",
+  "ssoTokenLoginHelp": "Subscriptions, playlists and history need Invidious token sign-in. Your browser is already signed in with SSO, so you only need to approve it.",
+  "ssoNotNow": "Not now"
 }
