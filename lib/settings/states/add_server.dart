@@ -363,6 +363,10 @@ class AddServerCubit extends Cubit<AddServerState> {
 
   void selectPublicInstance(String url) {
     if (isClosed || state.loading) return;
+    // A public directory instance is never probed for single sign-on.
+    _ssoProbe?.cancel();
+    _ssoProbeUrl = normalizeUrl(url);
+    ssoDiscovery.value = null;
     urlController.text = url;
     // Headers entered for a private server must not follow a public choice.
     emit(state.copyWith(
