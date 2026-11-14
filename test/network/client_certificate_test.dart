@@ -12,6 +12,11 @@ import 'package:flutter_test/flutter_test.dart';
 // client_aes.p12: OpenSSL 3 default, PBES2 AES-256-CBC + HMAC-SHA256 MAC.
 const _password = 'test-password';
 
+// TestWidgetsFlutterBinding replaces HttpClient with a 400-only mock.
+class _RealHttpOverrides extends HttpOverrides {}
+
+HttpClient _realHttpClient() => _RealHttpOverrides().createHttpClient(null);
+
 Uint8List _fixture(String name) =>
     File('test/network/fixtures/$name').readAsBytesSync();
 
@@ -100,12 +105,12 @@ void main() {
       final client = ClientCertificateRoutingHttpClient(
         plain: () {
           plainCreated++;
-          return HttpClient()
+          return _realHttpClient()
             ..findProxy = (_) => 'PROXY 127.0.0.1:${plain.port}';
         },
         withCertificate: () {
           certifiedCreated++;
-          return HttpClient()
+          return _realHttpClient()
             ..findProxy = (_) => 'PROXY 127.0.0.1:${certified.port}';
         },
         presentsTo: selection.presentsTo,

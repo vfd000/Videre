@@ -39,6 +39,54 @@ class _Pending {
   _Pending(this.pkcs12, this.password, this.info);
 }
 
+/// Owns its controller so the field outlives the dialog's exit animation.
+class _PasswordDialog extends StatefulWidget {
+  const _PasswordDialog();
+
+  @override
+  State<_PasswordDialog> createState() => _PasswordDialogState();
+}
+
+class _PasswordDialogState extends State<_PasswordDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final locals = AppLocalizations.of(context)!;
+    return AlertDialog(
+      title: Text(locals.clientCertificatePasswordTitle),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        obscureText: true,
+        autocorrect: false,
+        enableSuggestions: false,
+        enableIMEPersonalizedLearning: false,
+        decoration: InputDecoration(
+          labelText: locals.clientCertificatePassword,
+        ),
+        onSubmitted: (value) => Navigator.pop(context, value),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(locals.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _controller.text),
+          child: Text(locals.ok),
+        ),
+      ],
+    );
+  }
+}
+
 class ClientCertificateSettingsScreen extends StatefulWidget {
   final ClientCertificates? certificates;
   final Future<Uint8List?> Function()? pickFile;
@@ -119,39 +167,11 @@ class _ClientCertificateSettingsScreenState
     });
   }
 
-  Future<String?> _askPassword() {
-    final locals = AppLocalizations.of(context)!;
-    final controller = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      animationStyle: AppMotion.dialogStyle(context),
-      builder: (context) => AlertDialog(
-        title: Text(locals.clientCertificatePasswordTitle),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          obscureText: true,
-          autocorrect: false,
-          enableSuggestions: false,
-          enableIMEPersonalizedLearning: false,
-          decoration: InputDecoration(
-            labelText: locals.clientCertificatePassword,
-          ),
-          onSubmitted: (value) => Navigator.pop(context, value),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(locals.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: Text(locals.ok),
-          ),
-        ],
-      ),
-    ).whenComplete(controller.dispose);
-  }
+  Future<String?> _askPassword() => showDialog<String>(
+        context: context,
+        animationStyle: AppMotion.dialogStyle(context),
+        builder: (context) => const _PasswordDialog(),
+      );
 
   Future<void> _import() async {
     final locals = AppLocalizations.of(context)!;
