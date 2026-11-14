@@ -4,6 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../app/states/app.dart';
 import '../../globals.dart';
 import '../../network/nerdvpn_access.dart';
+import '../../network/watch_auth.dart';
 import '../../utils/interfaces/db.dart';
 import '../models/db/server.dart';
 import '../models/backend_selector.dart';
@@ -209,6 +210,7 @@ class ServerSettingsCubit extends Cubit<ServerSettingsState> {
 
   Future<void> _deleteGatewaySession(Server server) async {
     await service.logOutProtected(server);
+    await WatchAuth.instance.signOut(server);
   }
 
   Future<void> deleteServer() async {

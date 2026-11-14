@@ -3,6 +3,7 @@ import 'package:logging/logging.dart';
 
 import '../backend_selector.dart';
 import '../../../network/gateway_context.dart';
+import '../../../network/watch_auth.dart';
 
 part 'server.freezed.dart';
 
@@ -53,7 +54,11 @@ sealed class Server with _$Server {
             accountId: accountId,
             serverUrl: this.url,
             targetUrl: url,
-            headers: customHeaders)
+            headers: {
+                ...customHeaders,
+                // Single sign-on ID token, kept current by WatchAuth.
+                ...WatchAuth.instance.headersFor(this, url),
+              })
         : null;
   }
 
