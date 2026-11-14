@@ -17,6 +17,7 @@ import 'package:workmanager/workmanager.dart';
 import 'notifications/notifications.dart';
 import 'videos/models/video.dart';
 import 'network/native_proxy_http_client.dart';
+import 'network/watch_auth.dart';
 import 'service.dart';
 
 var log = Logger('background-task');
@@ -74,6 +75,9 @@ Future<void> _backgroundCheck() async {
     // The native transport reads the live, atomic proxy policy. A worker must
     // not retain a direct-connection snapshot while foreground settings change.
     service = Service(httpClient: NativeProxyHttpClient());
+    // Refresh on demand only; the foreground app owns the refresh timer.
+    await WatchAuth.instance
+        .initialize(client: NativeProxyHttpClient(), scheduleRefresh: false);
     await checkForNewVideos();
   } catch (e) {
     log.severe("Error while running workmanager", e);

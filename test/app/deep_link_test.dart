@@ -313,7 +313,7 @@ void main() {
       'https://music.youtube.com.example.com/watch?v=dQw4w9WgXcQ',
       'https://example.com/watch?v=dQw4w9WgXcQ',
       'ftp://youtube.com/watch?v=dQw4w9WgXcQ',
-      'videre-auth://callback?code=private',
+      'videre-liess-auth://callback?code=private',
       'not a URL',
     ]) {
       await app.openAppLink(link, true);
@@ -416,9 +416,13 @@ void main() {
     expect(musicFilter, contains('android:pathPrefix="/channel/"'));
     expect(musicFilter, contains('android:pathPrefix="/playlist"'));
     expect(musicFilter, isNot(contains('android:host="youtube.com"')));
-    expect(mainActivity, isNot(contains('videre-auth')));
+    expect(mainActivity, isNot(contains('videre-liess-auth')));
     expect(
         manifest, contains('com.linusu.flutter_web_auth_2.CallbackActivity'));
-    expect(manifest, contains('android:scheme="videre-auth"'));
+    expect(manifest, contains('android:scheme="videre-liess-auth"'));
+    expect(manifest, contains('android:scheme="videre-liess-oidc"'));
+    expect(mainActivity, isNot(contains('videre-liess-oidc')));
+    // Upstream Videre installs side by side; never claim its schemes.
+    expect(manifest, isNot(contains('android:scheme="videre-auth"')));
   });
 }
