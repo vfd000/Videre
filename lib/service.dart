@@ -48,6 +48,7 @@ import 'notifications/models/db/subscription_notifications.dart';
 import 'network/native_proxy_http_client.dart';
 import 'network/network_proxy.dart';
 import 'network/origin_scoped_http_client.dart';
+import 'network/watch_auth_http_client.dart';
 import 'network/gateway_context.dart';
 import 'network/gateway_session_bridge.dart';
 import 'network/nerdvpn_access.dart';
@@ -186,9 +187,10 @@ class Service {
       Future<void> Function(Duration)? wait})
       // Android's worker transport already scopes redirects natively, with a
       // single timeout for the entire chain rather than one timeout per hop.
-      : httpClient = httpClient is NativeProxyHttpClient
+      // Single sign-on servers also receive their account's current ID token.
+      : httpClient = WatchAuthHttpClient(httpClient is NativeProxyHttpClient
             ? httpClient
-            : OriginScopedHttpClient(httpClient ?? http.Client()),
+            : OriginScopedHttpClient(httpClient ?? http.Client())),
         _now = now ?? DateTime.now,
         _wait = wait ?? Future<void>.delayed;
 
@@ -1233,7 +1235,7 @@ class Service {
         : original.url;
     final pkce = NerdVpnAccess.supports(original) ? NerdVpnPkce.create() : null;
     final callback = Uri(
-        scheme: 'videre-auth',
+        scheme: 'videre-liess-auth',
         host: 'callback',
         queryParameters: {'state': nonce});
     final url =
@@ -1249,7 +1251,7 @@ class Service {
     String result;
     try {
       result = await FlutterWebAuth2.authenticate(
-          url: url, callbackUrlScheme: 'videre-auth');
+          url: url, callbackUrlScheme: 'videre-liess-auth');
     } on PlatformException catch (error) {
       if (error.code == 'CANCELED') return null;
       rethrow;

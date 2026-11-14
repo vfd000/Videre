@@ -41,7 +41,7 @@ class MainActivity : AudioServiceActivity() {
     private var pipAspectRatio = Rational(16, 9)
     private var pendingFile: FileRequest? = null
 
-    private class FileRequest(val result: MethodChannel.Result, val bytes: ByteArray?)
+    private class FileRequest(val result: MethodChannel.Result, val bytes: ByteArray?, val binary: Boolean = false)
     private class FileTooLarge : IOException()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -91,7 +91,7 @@ class MainActivity : AudioServiceActivity() {
     }
 
     private fun pickFile(call: MethodCall, result: MethodChannel.Result) {
-        if (call.method != "save" && call.method != "open") {
+        if (call.method != "save" && call.method != "open" && call.method != "openBinary") {
             result.notImplemented()
             return
         }
@@ -116,13 +116,15 @@ class MainActivity : AudioServiceActivity() {
             result.error("FILE_TOO_LARGE", "Files must be no larger than 10 MiB.", null)
             return
         }
-        val request = FileRequest(result, bytes)
+        // openBinary returns raw bytes, e.g. a PKCS#12 client certificate.
+        val binary = call.method == "openBinary"
+        val request = FileRequest(result, bytes, binary)
         pendingFile = request
         val intent = Intent(if (saving) Intent.ACTION_CREATE_DOCUMENT else Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = if (saving) "application/json" else "*/*"
             if (saving) putExtra(Intent.EXTRA_TITLE, name)
-            else putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/json", "text/plain"))
+            else if (!binary) putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/json", "text/plain"))
         }
         try {
             startActivityForResult(intent, FILE_REQUEST_CODE)
@@ -164,7 +166,8 @@ class MainActivity : AudioServiceActivity() {
                             if (output.size() + count > MAX_FILE_BYTES) throw FileTooLarge()
                             output.write(buffer, 0, count)
                         }
-                        Charsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(output.toByteArray())).toString()
+                        if (request.binary) output.toByteArray()
+                        else Charsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(output.toByteArray())).toString()
                     }
                 }
                 mainHandler.post { finishFile(request, value) }

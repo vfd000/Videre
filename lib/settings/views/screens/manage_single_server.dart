@@ -8,6 +8,7 @@ import 'package:clipious/settings/states/server_settings.dart';
 import 'package:clipious/settings/views/components/backend_picker.dart';
 import 'package:clipious/settings/views/components/profile_picker.dart';
 import 'package:clipious/settings/views/components/watch_sync_status.dart';
+import 'package:clipious/settings/views/components/watch_auth_settings.dart';
 import 'package:clipious/settings/views/components/nerdvpn_access_settings.dart';
 import 'package:clipious/network/nerdvpn_access.dart';
 import 'package:clipious/utils.dart';
@@ -136,6 +137,13 @@ class ManageSingleServerScreen extends StatelessWidget {
                           tiles: [
                             CustomSettingsTile(
                                 child: WatchSyncStatus(account: server)),
+                            CustomSettingsTile(
+                                child: WatchAuthSettings(
+                              account: server,
+                              authenticating: state.authenticating,
+                              onTokenLogin: () => runServerAccountAction(
+                                  context, cubit.logInWithToken),
+                            )),
                             if (NerdVpnAccess.supports(server))
                               CustomSettingsTile(
                                 child: NerdVpnAccessSettings(

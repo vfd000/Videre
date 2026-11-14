@@ -144,7 +144,7 @@ internal class PolicyCallFactory : Call.Factory {
     private var client: OkHttpClient? = null
     private val calls = mutableSetOf<Call>()
 
-    fun configure(policy: ProxyPolicy) {
+    fun configure(policy: ProxyPolicy, clientCertificate: ClientCertificateTls? = null) {
         val builder = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
@@ -180,6 +180,11 @@ internal class PolicyCallFactory : Call.Factory {
                 attempt?.responseReceived = true
                 response
             }
+        if (clientCertificate != null) {
+            // Platform trust; the key manager offers the client certificate
+            // only to the hosts the user selected for it.
+            builder.sslSocketFactory(clientCertificate.socketFactory, clientCertificate.trustManager)
+        }
         if (policy.enabled) {
             builder.proxySelector(SocksOnlySelector(policy))
             // OkHttp passes an unresolved origin address to Java's SOCKS socket.

@@ -3,7 +3,9 @@ import 'package:clipious/app/views/components/session_focus_guard.dart';
 import 'package:clipious/utils/motion_binding.dart';
 import 'dart:async';
 import 'dart:io';
+import 'network/client_certificate.dart';
 import 'network/network_proxy.dart';
+import 'network/watch_auth.dart';
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:feedback/feedback.dart';
@@ -70,6 +72,9 @@ Future<void> main() async {
   db = await SembastSqfDb.create();
   await fileDb.syncWithDb();
   await NetworkProxy.instance.initialize();
+  await ClientCertificates.instance.initialize();
+  // Single sign-on tokens must be loaded before the first server request.
+  await WatchAuth.instance.initialize();
 
   late final bool hasServer;
   try {

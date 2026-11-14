@@ -9,7 +9,11 @@ import 'package:clipious/l10n/generated/app_localizations.dart';
 import 'package:settings_ui/settings_ui.dart';
 
 import '../../models/db/server.dart';
+import '../../../globals.dart';
 import '../../../network/nerdvpn_access.dart';
+import '../../../network/watch_auth.dart';
+import 'server_account_dialogs.dart';
+import 'watch_auth_settings.dart';
 import '../screens/settings.dart';
 
 class ManagerServersView extends StatelessWidget {
@@ -30,6 +34,17 @@ class ManagerServersView extends StatelessWidget {
       await cubit.saveServer(server);
       if (context.mounted && NerdVpnAccess.supports(server)) {
         await openServer(context, server);
+      } else if (context.mounted &&
+          WatchAuth.instance.sessionFor(server) != null &&
+          (server.authToken?.isEmpty ?? true)) {
+        // Signed in with SSO; Invidious account features need its token too.
+        await offerInvidiousTokenLogin(
+            context,
+            () => runServerAccountAction(
+                context,
+                () => service.logIn(server.accountId,
+                    profileId: server.profileId)));
+        await cubit.refreshServers();
       }
     }
   }
