@@ -51,18 +51,18 @@ class NerdVpnPkceTest {
             assertTrue(authorization.queryParameter("scopes")!!.split(',').contains(":api_key"))
             assertEquals("S256", authorization.queryParameter("code_challenge_method"))
             assertEquals("fixture-code", attempt.codeFromCallback("${attempt.callbackUrl}?code=fixture-code"))
-            assertNull(attempt.codeFromCallback("videre-liess-gateway://callback/other?code=fixture-code"))
+            assertNull(attempt.codeFromCallback("videre-gateway://callback/other?code=fixture-code"))
         }
     }
 
     @Test fun `callback requires the attempt nonce and one code without a token downgrade`() {
         val attempt = NerdVpnPkce.forServer(server, "nonce")!!
         assertEquals("code/with+encoding", attempt.codeFromCallback("${attempt.callbackUrl}?code=code%2Fwith%2Bencoding"))
-        for (callback in listOf("videre-liess-gateway://callback/other?code=secret",
-            "videre-liess-gateway://callback:443/nonce?code=secret", "videre-liess-gateway://user@callback/nonce?code=secret",
-            "videre-liess-gateway://callback/nonce?code=secret#fragment", "videre-liess-gateway://callback/nonce?token=secret",
-            "videre-liess-gateway://callback/nonce?code=one&code=two", "videre-liess-gateway://callback/nonce?code=secret&token=token",
-            "videre-liess-gateway://callback/nonce?code=", "videre-liess-gateway://callback/nonce?code=%00%")) {
+        for (callback in listOf("videre-gateway://callback/other?code=secret",
+            "videre-gateway://callback:443/nonce?code=secret", "videre-gateway://user@callback/nonce?code=secret",
+            "videre-gateway://callback/nonce?code=secret#fragment", "videre-gateway://callback/nonce?token=secret",
+            "videre-gateway://callback/nonce?code=one&code=two", "videre-gateway://callback/nonce?code=secret&token=token",
+            "videre-gateway://callback/nonce?code=", "videre-gateway://callback/nonce?code=%00%")) {
             assertNull(callback, attempt.codeFromCallback(callback))
         }
     }

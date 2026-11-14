@@ -109,7 +109,7 @@ class GatewayAuthBrowser(private val activity: Activity) {
         val pkce = NerdVpnPkce.forServer(server, nonce)
         val login = pkce?.authorizationUrl(server) ?: server.newBuilder().encodedPath(server.encodedPath.trimEnd('/') + "/authorize_token")
             .addQueryParameter("scopes", ":feed,:subscriptions*,:playlists*,:history*")
-            .addQueryParameter("callback_url", "videre-liess-gateway://callback/$nonce").build().toString()
+            .addQueryParameter("callback_url", "videre-gateway://callback/$nonce").build().toString()
         val request = Request(result, context, policy, login, nonce, pkce,
             call.argument<String>("title") ?: "Sign in to protected server",
             call.argument<String>("help") ?: "Sign in to your gateway, then authorize Invidious.",
@@ -214,7 +214,7 @@ class GatewayAuthBrowser(private val activity: Activity) {
 
     private fun navigate(request: Request, web: WebView, uri: Uri): Boolean {
         if (current !== request || request.finishing || request.exchange != null) return true
-        if (uri.scheme == "videre-liess-gateway") {
+        if (uri.scheme == "videre-gateway") {
             val previous = web.url?.toHttpUrlOrNull()
             if (request.pkce != null) {
                 val code = request.pkce.codeFromCallback(uri.toString())
